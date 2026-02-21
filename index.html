@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Путь Ушакова</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cormorant+Garamond:ital,wght@0,400;1,400;1,600&family=Roboto+Slab:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="game-container">
+
+  <!-- ===== СТАРТОВЫЙ ЭКРАН ===== -->
+  <div id="screen-start" class="screen active">
+    <div class="overlay"></div>
+    <div class="start-content">
+      <h1 class="game-title">Путь Ушакова</h1>
+      <p class="start-subtitle">Семь решений, которые определили судьбу непобедимого адмирала</p>
+
+      <div class="start-description">
+        <div class="desc-block">
+          <h3>⚓ О чем эта игра?</h3>
+          <p>Вы пройдёте путь великого русского адмирала Фёдора Ушакова — от юного кадета до святого воина. На каждом этапе вас ждёт исторический выбор: поступите ли вы так же, как Ушаков, или пойдёте своим курсом?</p>
+        </div>
+        <div class="desc-block">
+          <h3>🎮 Как играть?</h3>
+          <p>На каждой сцене вы увидите описание исторической ситуации. Прочтите его, нажмите «Далее» — и перед вами появятся варианты действий. Выберите один из них. После выбора вы узнаете последствия и перейдёте к следующей сцене.</p>
+        </div>
+        <div class="desc-block">
+          <h3>🏆 Достижения</h3>
+          <p>За особые комбинации решений вы получите достижения. Они сохраняются между прохождениями! Пройдите игру несколько раз разными путями, чтобы собрать все.</p>
+        </div>
+        <div class="desc-block">
+          <h3>📊 Итоги</h3>
+          <p>В конце вы получите карточку с результатами: процент совпадения с реальным Ушаковым, набранные качества и персональную оценку. Карточку можно сохранить или поделиться ею.</p>
+        </div>
+        <div class="desc-block">
+          <h3>🔊 Звук</h3>
+          <p>В игре есть фоновая музыка. Вы можете включить или выключить её в любой момент кнопкой 🔊 в углу экрана.</p>
+        </div>
+      </div>
+
+      <div class="name-input-block">
+        <label for="player-name-input" class="name-label">Как называть вас, капитан?</label>
+        <input type="text" id="player-name-input" class="name-input" placeholder="Введите ваше имя..." maxlength="30" autocomplete="off">
+      </div>
+
+      <button id="btn-start" class="btn-pulse" disabled>Поднять паруса</button>
+    </div>
+  </div>
+
+  <!-- ===== ЭКРАН СЦЕНЫ ===== -->
+  <div id="screen-scene" class="screen">
+    <div class="overlay"></div>
+    <button id="sound-toggle-scene" class="sound-toggle" title="Вкл/Выкл звук">🔊</button>
+    <div class="scene-content">
+      <h2 id="scene-title" class="scene-title"></h2>
+      <div id="scene-text-block" class="scene-text-block">
+        <div id="scene-text" class="scene-text"></div>
+        <button id="btn-show-choices" class="btn-next btn-show-choices">Далее</button>
+      </div>
+      <div id="scene-choices" class="choices-container" style="display:none;">
+        <div class="choices-header">
+          <button id="btn-back-to-text" class="btn-back">← Назад к описанию</button>
+        </div>
+        <div id="scene-choices-buttons"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ЭКРАН РЕЗУЛЬТАТА ===== -->
+  <div id="screen-result" class="screen">
+    <div class="overlay"></div>
+    <button id="sound-toggle-result" class="sound-toggle" title="Вкл/Выкл звук">🔊</button>
+    <div class="result-content">
+      <h2 id="result-title" class="result-title"></h2>
+      <div id="result-text" class="result-text"></div>
+      <button id="btn-next" class="btn-next">Далее</button>
+    </div>
+  </div>
+
+  <!-- ===== ФИНАЛЬНЫЙ ЭКРАН ===== -->
+  <div id="screen-final" class="screen">
+    <div class="overlay"></div>
+    <button id="sound-toggle-final" class="sound-toggle" title="Вкл/Выкл звук">🔊</button>
+    <div class="final-content">
+      <div id="final-card" class="final-card">
+        <div class="card-border">
+          <div class="card-inner">
+            <div class="card-header">
+              <div class="card-ornament-left"></div>
+              <h2 class="card-title">Итоги плавания</h2>
+              <div class="card-ornament-right"></div>
+            </div>
+            <div class="card-divider"></div>
+
+            <div class="card-stats">
+              <div class="stat-row">
+                <span class="stat-label">Капитан:</span>
+                <span id="stat-name" class="stat-value"></span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Совпадение с Ушаковым:</span>
+                <span id="stat-percent" class="stat-value">0%</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-label">Верных решений:</span>
+                <span id="stat-correct" class="stat-value">0 / 0</span>
+              </div>
+            </div>
+            <div class="card-divider"></div>
+            <div id="final-summary" class="card-summary"></div>
+            <div class="card-divider"></div>
+            <div class="card-counters" id="card-counters"></div>
+            <div class="card-divider"></div>
+            <div class="achievements-section">
+              <h3 class="achievements-title">Достижения</h3>
+              <div id="achievements-grid" class="achievements-grid"></div>
+              <p class="achievements-hint">Пройдите игру несколько раз, чтобы открыть все достижения. Они сохраняются между прохождениями!</p>
+            </div>
+            <div class="card-footer">
+              <span class="card-game-name">Путь Ушакова</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="final-buttons">
+        <button id="btn-share" class="btn-share">Поделиться</button>
+        <button id="btn-restart" class="btn-restart">Пройти заново</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>

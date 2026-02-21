@@ -1,0 +1,110 @@
+{
+  "land_rat": {
+    "name": "Сухопутная крыса",
+    "desc": "Выбрали не выходить в море и остались на суше",
+    "conditions": [
+      { "type": "counter", "name": "land", "op": ">=", "value": 1 }
+    ]
+  },
+  "true_admiral": {
+    "name": "Истинный адмирал",
+    "desc": "Совпали с Ушаковым во всех семи решениях — идеальный результат!",
+    "conditions": [
+      { "type": "percent", "op": "=", "value": 100 }
+    ]
+  },
+  "diplomat": {
+    "name": "Морской дипломат",
+    "desc": "Предпочли дипломатию бою — ждали союзников вместо штурма",
+    "conditions": [
+      { "type": "counter", "name": "diplomacy", "op": ">=", "value": 1 },
+      { "type": "counter", "name": "patience", "op": ">=", "value": 1 }
+    ]
+  },
+  "storm_breaker": {
+    "name": "Покоритель бурь",
+    "desc": "Набрали максимум отваги — не менее 3 очков смелости",
+    "conditions": [
+      { "type": "counter", "name": "courage", "op": ">=", "value": 3 }
+    ]
+  },
+  "crew_father": {
+    "name": "Отец команды",
+    "desc": "Позаботились о матросах при чуме и проявили милосердие к пленным",
+    "conditions": [
+      { "type": "counter", "name": "crew_care", "op": ">=", "value": 1 },
+      { "type": "counter", "name": "mercy", "op": ">=", "value": 1 }
+    ]
+  },
+  "plague_doctor": {
+    "name": "Чумной доктор",
+    "desc": "Спасли команду от эпидемии карантином И одержали хотя бы одну победу в бою",
+    "conditions": [
+      { "type": "choice", "scene": 2, "result": "2a" },
+      { "type": "counter", "name": "courage", "op": ">=", "value": 1 }
+    ]
+  },
+  "fortress_taker": {
+    "name": "Взявший Корфу",
+    "desc": "Штурмовали Корфу и при этом проявили милосердие к побеждённым",
+    "conditions": [
+      { "type": "choice", "scene": 5, "result": "5a" },
+      { "type": "choice", "scene": 6, "result": "6a" }
+    ]
+  },
+  "rebel_tactician": {
+    "name": "Тактик-бунтарь",
+    "desc": "Набрали не менее 2 очков тактики — нарушали шаблон ради победы",
+    "conditions": [
+      { "type": "counter", "name": "tactics", "op": ">=", "value": 2 }
+    ]
+  },
+  "merciful_winner": {
+    "name": "Милосердный победитель",
+    "desc": "Проявили милосердие дважды — и к своим, и к чужим",
+    "conditions": [
+      { "type": "counter", "name": "mercy", "op": ">=", "value": 2 }
+    ]
+  },
+  "court_refuser": {
+    "name": "Отказник от двора",
+    "desc": "Ни разу не выбрали придворную карьеру и набрали хотя бы 2 очка чести",
+    "conditions": [
+      { "type": "counter", "name": "court", "op": "=", "value": 0 },
+      { "type": "counter", "name": "honor", "op": ">=", "value": 2 }
+    ]
+  },
+  "penny_pincher": {
+    "name": "Казённый скупец",
+    "desc": "Не потеряли ни одного очка (нет потерь, малодушия и жестокости)",
+    "conditions": [
+      { "type": "counter", "name": "loss", "op": "=", "value": 0 },
+      { "type": "counter", "name": "cowardice", "op": "=", "value": 0 },
+      { "type": "counter", "name": "cruelty", "op": "=", "value": 0 }
+    ]
+  },
+  "saint_sailor": {
+    "name": "Святой моряк",
+    "desc": "Набрали не менее 4 очков веры — путь воина-монаха",
+    "conditions": [
+      { "type": "counter", "name": "faith", "op": ">=", "value": 4 }
+    ]
+  },
+  "cannon_master": {
+    "name": "Мастер канонады",
+    "desc": "Ставка на прицельный огонь: очки канонады и тактики одновременно",
+    "conditions": [
+      { "type": "counter", "name": "cannon", "op": ">=", "value": 1 },
+      { "type": "counter", "name": "tactics", "op": ">=", "value": 1 }
+    ]
+  },
+  "people_first": {
+    "name": "Люди важнее пушек",
+    "desc": "Забота о команде, милосердие к пленным и вера — всё вместе",
+    "conditions": [
+      { "type": "counter", "name": "crew_care", "op": ">=", "value": 1 },
+      { "type": "counter", "name": "mercy", "op": ">=", "value": 1 },
+      { "type": "counter", "name": "faith", "op": ">=", "value": 2 }
+    ]
+  }
+}
