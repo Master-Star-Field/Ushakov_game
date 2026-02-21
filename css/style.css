@@ -188,11 +188,6 @@ html, body {
   border-radius: 4px;
 }
 
-.btn-pulse:not(:disabled):hover {
-  background: var(--color-gold);
-  color: var(--color-dark);
-  box-shadow: 0 0 30px rgba(201,168,76,0.6);
-}
 
 @keyframes pulse {
   0%, 100% {
@@ -604,9 +599,19 @@ html, body {
     padding: 16px 20px;
   }
   .btn-pulse {
-    font-size: clamp(1.3rem, 4.5vw, 1.8rem);
-    padding: 18px 40px;
-  }
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+  padding: 16px 45px;
+  border: 2px solid var(--color-gold);
+  background: transparent;
+  color: var(--color-gold);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  animation: pulse 2s ease-in-out infinite;
+  transition: all 0.3s;
+  border-radius: 4px;
+}
   .scene-title, .result-title {
     font-size: clamp(2rem, 7vw, 3rem);
   }
@@ -784,10 +789,19 @@ html, body {
     padding: 16px 26px;
   }
   .btn-pulse {
-    font-size: clamp(1.55rem, 2.2vw, 2rem);
-    padding: 22px 65px;
-    letter-spacing: 5px;
-  }
+  font-family: var(--font-body);
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+  padding: 16px 45px;
+  border: 2px solid var(--color-gold);
+  background: transparent;
+  color: var(--color-gold);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  animation: pulse 2s ease-in-out infinite;
+  transition: all 0.3s;
+  border-radius: 4px;
+}
   .scene-title, .result-title {
     font-size: clamp(2.6rem, 4.5vw, 4rem);
     margin-bottom: 25px;
@@ -885,7 +899,11 @@ html, body {
   gap: 10px;
   width: 100%;
 }
-
+.btn-pulse:hover {
+  background: var(--color-gold);
+  color: var(--color-dark);
+  box-shadow: 0 0 30px rgba(201,168,76,0.6);
+}
 /* Предотвращение наложения кнопок на мобильных */
 @media (max-width: 768px) {
   .final-buttons {

@@ -212,41 +212,111 @@
     });
   }
 
-  // ========== MUSIC ==========
+  // ========== MUSIC (полностью переработанная) ==========
+  
+  // Уникальный ID для предотвращения гонки аудио
+  var musicRequestId = 0;
+
   function startBgMusic() {
     try {
-      var audio = new Audio('files/music/background_30.mp3');
-      audio.loop = true;
-      audio.volume = 0.2;
-      if (!state.soundMuted) {
-        audio.play().catch(function() {});
+      if (state.bgMusic) {
+        state.bgMusic.pause();
+        state.bgMusic.src = '';
+        state.bgMusic = null;
       }
+      var audio = new Audio();
+      audio.preload = 'auto';
+      audio.loop = true;
+      audio.volume = 0.3;
+      
+      // Пробуем загрузить
+      audio.onerror = function() {
+        console.warn('[Музыка] Фоновая музыка не найдена');
+        state.bgMusic = null;
+      };
+      
+      audio.src = 'files/music/background_30.mp3?v=' + Date.now();
       state.bgMusic = audio;
-    } catch(e) {}
+      
+      if (!state.soundMuted) {
+        var playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(e) {
+            console.warn('[Музыка] Автовоспроизведение заблокировано');
+          });
+        }
+      }
+    } catch(e) {
+      console.warn('[Музыка] Ошибка инициализации фоновой музыки');
+    }
   }
 
   function playSceneMusic(sceneNum) {
+    // Увеличиваем ID чтобы отменить предыдущие попытки загрузки
+    musicRequestId++;
+    var currentRequestId = musicRequestId;
+    
+    // Полностью останавливаем и уничтожаем предыдущий аудио
     if (state.sceneMusic) {
-      state.sceneMusic.pause();
+      try {
+        state.sceneMusic.pause();
+        state.sceneMusic.removeAttribute('src');
+        state.sceneMusic.load(); // сбрасываем
+      } catch(e) {}
       state.sceneMusic = null;
     }
+    
     try {
-      var audio = new Audio('files/music/scene' + sceneNum + '_50.mp3');
+      var audio = new Audio();
+      audio.preload = 'auto';
       audio.volume = 0.6;
       audio.loop = false;
+      
+      audio.onerror = function() {
+        console.warn('[Музыка] Музыка сцены ' + sceneNum + ' не найдена');
+        if (currentRequestId === musicRequestId) {
+          state.sceneMusic = null;
+        }
+      };
+      
+      // Добавляем cache-buster чтобы не грузился старый кешированный файл
+      audio.src = 'files/music/scene' + sceneNum + '_50.mp3?v=' + Date.now();
+      
+      // Проверяем что этот запрос ещё актуален
+      if (currentRequestId !== musicRequestId) return;
+      
+      state.sceneMusic = audio;
+      
       if (!state.soundMuted) {
-        audio.play().then(function() {
-          state.sceneMusic = audio;
-        }).catch(function() {});
-      } else {
-        state.sceneMusic = audio;
+        // Ждём загрузки перед воспроизведением
+        audio.addEventListener('canplaythrough', function onReady() {
+          audio.removeEventListener('canplaythrough', onReady);
+          // Ещё раз проверяем актуальность
+          if (currentRequestId !== musicRequestId) {
+            audio.pause();
+            return;
+          }
+          var playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(function(e) {
+              console.warn('[Музыка] Не удалось воспроизвести сцену ' + sceneNum);
+            });
+          }
+        });
       }
-    } catch(e) {}
+    } catch(e) {
+      console.warn('[Музыка] Ошибка инициализации музыки сцены ' + sceneNum);
+    }
   }
 
   function stopSceneMusic() {
+    musicRequestId++; // отменяем все pending запросы
     if (state.sceneMusic) {
-      state.sceneMusic.pause();
+      try {
+        state.sceneMusic.pause();
+        state.sceneMusic.removeAttribute('src');
+        state.sceneMusic.load();
+      } catch(e) {}
       state.sceneMusic = null;
     }
   }
@@ -254,7 +324,6 @@
   function toggleSound() {
     state.soundMuted = !state.soundMuted;
 
-    // Update all toggle buttons
     var btns = document.querySelectorAll('.sound-toggle');
     for (var i = 0; i < btns.length; i++) {
       btns[i].textContent = state.soundMuted ? '🔇' : '🔊';
@@ -266,11 +335,19 @@
     }
 
     if (state.soundMuted) {
-      if (state.bgMusic) state.bgMusic.pause();
-      if (state.sceneMusic) state.sceneMusic.pause();
+      if (state.bgMusic) {
+        try { state.bgMusic.pause(); } catch(e) {}
+      }
+      if (state.sceneMusic) {
+        try { state.sceneMusic.pause(); } catch(e) {}
+      }
     } else {
-      if (state.bgMusic) state.bgMusic.play().catch(function() {});
-      if (state.sceneMusic) state.sceneMusic.play().catch(function() {});
+      if (state.bgMusic) {
+        try { state.bgMusic.play().catch(function(){}); } catch(e) {}
+      }
+      if (state.sceneMusic) {
+        try { state.sceneMusic.play().catch(function(){}); } catch(e) {}
+      }
     }
   }
 
@@ -284,98 +361,88 @@
     target.classList.add('active', 'fade-in');
     setTimeout(function() { target.classList.remove('fade-in'); }, 800);
   }
-
+  // ========== УСТАНОВКА ФОНА (с принудительным обновлением) ==========
+  var imageCache = {};
+  
   function setBg(screenId, imagePath) {
     var screen = document.getElementById(screenId);
-    if (imagePath) {
-      var img = new Image();
-      img.onload = function() {
-        screen.style.backgroundImage = 'url(' + imagePath + ')';
-      };
-      img.onerror = function() {
-        screen.style.backgroundImage = 'none';
-      };
-      img.src = imagePath;
-    } else {
+    if (!screen) return;
+    
+    if (!imagePath) {
       screen.style.backgroundImage = 'none';
-    }
-  }
-
-  // ========== SHOW SCENE (description first, then choices) ==========
-  function showScene(num) {
-    var scene = state.scenes[String(num)];
-    if (!scene) {
-      showFinal();
       return;
     }
-
-    document.getElementById('scene-title').textContent = scene.title;
-    document.getElementById('scene-text').textContent = scene.text;
-    setBg('screen-scene', scene.fon);
-    playSceneMusic(num);
-
-    // Show text block, hide choices
-    var textBlock = document.getElementById('scene-text-block');
-    var choicesDiv = document.getElementById('scene-choices');
-    var choicesButtonsDiv = document.getElementById('scene-choices-buttons');
     
-    textBlock.style.display = 'flex';
-    choicesDiv.style.display = 'none';
-    if (choicesButtonsDiv) choicesButtonsDiv.innerHTML = '';
-
-    // Prepare choices (shuffled)
-    var variants = shuffleArray(scene.variants);
-
-    // "Далее" button to show choices
-    var showBtn = document.getElementById('btn-show-choices');
-    showBtn.onclick = function() {
-      textBlock.style.display = 'none';
-      choicesDiv.style.display = 'flex';
-
-      // Очищаем и добавляем варианты
-      if (choicesButtonsDiv) choicesButtonsDiv.innerHTML = '';
-      var targetDiv = choicesButtonsDiv || choicesDiv;
-
-      for (var i = 0; i < variants.length; i++) {
-        (function(variant, idx) {
-          var btn = document.createElement('button');
-          btn.className = 'choice-btn';
-          btn.textContent = variant.text;
-          btn.onclick = function() {
-            state.choices.push({
-              scene: num,
-              choice: idx,
-              resultId: variant.result,
-              correct: variant.correct || false
-            });
-            showResultScreen(variant.result);
-          };
-          targetDiv.appendChild(btn);
-        })(variants[i], i);
-      }
-    };
-
-    // "Назад" button to return to description
-    var backBtn = document.getElementById('btn-back-to-text');
-    if (backBtn) {
-      backBtn.onclick = function() {
-        choicesDiv.style.display = 'none';
-        textBlock.style.display = 'flex';
-      };
+    // Немедленно убираем старый фон чтобы не было "залипания"
+    screen.style.backgroundImage = 'none';
+    
+    // Проверяем кеш
+    if (imageCache[imagePath]) {
+      screen.style.backgroundImage = 'url(' + imagePath + ')';
+      return;
     }
+    
+    var img = new Image();
+    
+    img.onload = function() {
+      imageCache[imagePath] = true;
+      // Проверяем что экран ещё активен (не переключились уже)
+      screen.style.backgroundImage = 'url(' + imagePath + ')';
+    };
+    
+    img.onerror = function() {
+      console.warn('[Изображение] Не найдено: ' + imagePath);
+      screen.style.backgroundImage = 'none';
+    };
+    
+    img.src = imagePath;
+  }
 
-    showScreen('screen-scene');
+  // Предзагрузка изображений следующей сцены
+  function preloadNextScene(currentNum) {
+    var nextNum = currentNum + 1;
+    var nextScene = state.scenes[String(nextNum)];
+    if (!nextScene) return;
+    
+    // Предзагружаем фон следующей сцены
+    if (nextScene.fon) {
+      var img = new Image();
+      img.onload = function() { imageCache[nextScene.fon] = true; };
+      img.src = nextScene.fon;
+    }
+    
+    // Предзагружаем фоны результатов текущей сцены
+    var currentScene = state.scenes[String(currentNum)];
+    if (currentScene && currentScene.variants) {
+      for (var i = 0; i < currentScene.variants.length; i++) {
+        var resultId = currentScene.variants[i].result;
+        var resultData = state.results[resultId];
+        if (resultData && resultData.fon) {
+          var rImg = new Image();
+          rImg.onload = (function(path) {
+            return function() { imageCache[path] = true; };
+          })(resultData.fon);
+          rImg.src = resultData.fon;
+        }
+      }
+    }
   }
 
   // ========== SHOW RESULT ==========
   function showResultScreen(resultId) {
     var data = state.results[resultId];
     if (!data) {
-      data = { title: 'Последствия', text: 'Ваш выбор сделан. История продолжается.', fon: '', effects: [], correct: false };
+      data = { title: 'Последствия', text: 'Ваш выбор сделан.', fon: '', effects: [], correct: false };
     }
+
+    // Очищаем старый фон
+    var resultScreen = document.getElementById('screen-result');
+    resultScreen.style.backgroundImage = 'none';
 
     document.getElementById('result-title').textContent = data.title;
     document.getElementById('result-text').textContent = data.text;
+    
+    // Новый фон
     setBg('screen-result', data.fon);
 
     // Apply effects
@@ -393,6 +460,107 @@
     }
 
     showScreen('screen-result');
+  }
+  
+  // ========== SHOW SCENE ==========
+  function showScene(num) {
+    var scene = state.scenes[String(num)];
+    if (!scene) {
+      showFinal();
+      return;
+    }
+
+    // Сначала очищаем фон
+    var sceneScreen = document.getElementById('screen-scene');
+    sceneScreen.style.backgroundImage = 'none';
+
+    document.getElementById('scene-title').textContent = scene.title;
+    document.getElementById('scene-text').textContent = scene.text;
+    
+    // Устанавливаем фон
+    setBg('screen-scene', scene.fon);
+    
+    // Музыка
+    playSceneMusic(num);
+    
+    // Предзагрузка следующих ресурсов
+    preloadNextScene(num);
+
+    // Show text block, hide choices
+    var textBlock = document.getElementById('scene-text-block');
+    var choicesDiv = document.getElementById('scene-choices');
+    var choicesButtonsDiv = document.getElementById('scene-choices-buttons');
+    
+    textBlock.style.display = 'flex';
+    choicesDiv.style.display = 'none';
+    if (choicesButtonsDiv) choicesButtonsDiv.innerHTML = '';
+
+    // Prepare choices (shuffled)
+    var variants = shuffleArray(scene.variants);
+
+    // "Далее" button
+    var showBtn = document.getElementById('btn-show-choices');
+    showBtn.onclick = function(e) {
+      e.preventDefault();
+      textBlock.style.display = 'none';
+      choicesDiv.style.display = 'flex';
+
+      var targetDiv = choicesButtonsDiv || choicesDiv;
+      targetDiv.innerHTML = '';
+
+      for (var i = 0; i < variants.length; i++) {
+        (function(variant, idx) {
+          var btn = document.createElement('button');
+          btn.className = 'choice-btn';
+          btn.textContent = variant.text;
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            state.choices.push({
+              scene: num,
+              choice: idx,
+              resultId: variant.result,
+              correct: variant.correct || false
+            });
+            showResultScreen(variant.result);
+          });
+          targetDiv.appendChild(btn);
+        })(variants[i], i);
+      }
+    };
+
+    // "Назад" button
+    var backBtn = document.getElementById('btn-back-to-text');
+    if (backBtn) {
+      backBtn.onclick = function(e) {
+        e.preventDefault();
+        choicesDiv.style.display = 'none';
+        textBlock.style.display = 'flex';
+      };
+    }
+
+    showScreen('screen-scene');
+  }
+
+  // ========== ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (с очисткой) ==========
+  function showScreen(id) {
+    var screens = document.querySelectorAll('.screen');
+    for (var i = 0; i < screens.length; i++) {
+      screens[i].classList.remove('active', 'fade-in');
+    }
+    
+    var target = document.getElementById(id);
+    if (!target) return;
+    
+    // Прокручиваем контент наверх
+    var scrollable = target.querySelector('.scene-content, .result-content, .final-content, .start-content');
+    if (scrollable) {
+      scrollable.scrollTop = 0;
+    }
+    
+    target.classList.add('active', 'fade-in');
+    setTimeout(function() { 
+      target.classList.remove('fade-in'); 
+    }, 800);
   }
 
   // ========== CHECK ACHIEVEMENTS (from external definitions) ==========
@@ -729,90 +897,79 @@
     loadAchievements();
 
     loadAll(function() {
-      if (state.config.startbg) {
+      if (state.config && state.config.startbg) {
         setBg('screen-start', state.config.startbg);
       }
 
-      // Name input -> enable start button
-      // Множественные события для совместимости с разными устройствами
       var nameInput = document.getElementById('player-name-input');
       var startBtn = document.getElementById('btn-start');
 
-      // Кнопка всегда активна
+      // Убираем disabled на всякий случай
       startBtn.disabled = false;
+      startBtn.removeAttribute('disabled');
 
-      startBtn.onclick = function() {
-        var val = nameInput.value.trim();
-        // Если имя не введено — используем "Адмирал"
+      startBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var val = '';
+        if (nameInput) {
+          val = nameInput.value.trim();
+        }
         state.playerName = val.length > 0 ? val : 'Адмирал';
         document.title = 'Путь Ушакова — ' + state.playerName;
         startBgMusic();
         showScene(1);
-      };
-
-      // Добавляем все возможные события для максимальной совместимости
-      nameInput.addEventListener('input', checkNameInput);
-      nameInput.addEventListener('change', checkNameInput);
-      nameInput.addEventListener('keyup', checkNameInput);
-      nameInput.addEventListener('keydown', function(e) {
-        // Небольшая задержка чтобы значение успело обновиться
-        setTimeout(checkNameInput, 10);
-      });
-      nameInput.addEventListener('blur', checkNameInput);
-      nameInput.addEventListener('paste', function() {
-        setTimeout(checkNameInput, 10);
-      });
-      
-      // Для некоторых мобильных браузеров
-      nameInput.addEventListener('textInput', checkNameInput);
-      nameInput.addEventListener('compositionend', checkNameInput);
-
-      // Проверяем при фокусе (на случай автозаполнения)
-      nameInput.addEventListener('focus', function() {
-        setTimeout(checkNameInput, 100);
       });
 
-      startBtn.onclick = function() {
-        // Дополнительная проверка перед стартом
-        var val = nameInput.value.trim();
-        if (val.length === 0) {
-          nameInput.focus();
-          return;
-        }
-        state.playerName = val;
-        document.title = 'Путь Ушакова — ' + state.playerName;
-        startBgMusic();
-        showScene(1);
-      };
+      // Также разрешаем старт по Enter в поле ввода
+      if (nameInput) {
+        nameInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            startBtn.click();
+          }
+        });
+      }
 
-      document.getElementById('btn-next').onclick = function() {
+      document.getElementById('btn-next').addEventListener('click', function(e) {
+        e.preventDefault();
         state.currentScene++;
         if (state.currentScene > state.totalScenes) {
           showFinal();
         } else {
           showScene(state.currentScene);
         }
-      };
+      });
 
-      document.getElementById('btn-share').onclick = shareResult;
+      document.getElementById('btn-share').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        shareResult();
+      });
 
-      document.getElementById('btn-restart').onclick = function() {
+      document.getElementById('btn-restart').addEventListener('click', function(e) {
+        e.preventDefault();
         state.currentScene = 1;
         state.choices = [];
         state.counters = {};
         if (state.bgMusic) {
-          state.bgMusic.pause();
+          try { state.bgMusic.pause(); } catch(ex) {}
           state.bgMusic = null;
         }
         stopSceneMusic();
         document.title = 'Путь Ушакова';
         showScreen('screen-start');
-      };
+      });
 
       // Sound toggle buttons
       var soundBtns = document.querySelectorAll('.sound-toggle');
       for (var i = 0; i < soundBtns.length; i++) {
-        soundBtns[i].addEventListener('click', toggleSound);
+        soundBtns[i].addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSound();
+        });
       }
     });
   }
