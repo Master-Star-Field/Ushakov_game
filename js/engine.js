@@ -231,7 +231,7 @@
       state.sceneMusic = null;
     }
     try {
-      var audio = new Audio('files/music/scene' + sceneNum + '_50.wav');
+      var audio = new Audio('files/music/scene' + sceneNum + '_50.mp3');
       audio.volume = 0.6;
       audio.loop = false;
       if (!state.soundMuted) {
@@ -738,10 +738,17 @@
       var nameInput = document.getElementById('player-name-input');
       var startBtn = document.getElementById('btn-start');
 
-      function checkNameInput() {
+      // Кнопка всегда активна
+      startBtn.disabled = false;
+
+      startBtn.onclick = function() {
         var val = nameInput.value.trim();
-        startBtn.disabled = val.length === 0;
-      }
+        // Если имя не введено — используем "Адмирал"
+        state.playerName = val.length > 0 ? val : 'Адмирал';
+        document.title = 'Путь Ушакова — ' + state.playerName;
+        startBgMusic();
+        showScene(1);
+      };
 
       // Добавляем все возможные события для максимальной совместимости
       nameInput.addEventListener('input', checkNameInput);
